@@ -1,7 +1,7 @@
 {
   "name": "nodemongoblog",
   "version": "1.0.0",
-  "description": "This is a blof project, based on nodejs and mongoDb",
+  "description": "This is a blog project, based on nodejs and mongoDb",
   "license": "ISC",
   "author": "Deepinder Singh",
   "type": "commonjs",
