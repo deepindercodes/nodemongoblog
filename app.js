@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
 const path = require("path");
 const session = require("express-session");
+const MongoDBStore = require("connect-mongodb-session")(session);
 
 //------!!Important!!--- Following module will provide the application configuration settings
 const {
@@ -11,6 +12,10 @@ const {
   databaseName,
   sessionSecret,
 } = require("./applicationconfig");
+
+//The connection string to the MongoDB and the database name will be fetched from applicationconfig.js
+//Preparing the MongoDB, connectionstring
+const MONGODB_CONN = `${databaseConnectionString}/${databaseName}`;
 
 //In code modules
 const blogRoutes = require("./routes/blog");
@@ -29,6 +34,12 @@ app.use(bodyParser.urlencoded({ extended: false }));
 //Setting the middleware for handling static files
 app.use(express.static(path.join(__dirname, "public")));
 
+//Using MongoDb as Session store
+const sessionStoreMongDb = new MongoDBStore({
+  uri: MONGODB_CONN,
+  collection: "usersessions",
+});
+
 //Express session will use the sessionSecret from applicationconfig
 //Setting the maxAge of the server Session cookie to 20 mins
 //Setting resave and saveUninitialized to false, in order to avoid race around conditions and server loads
@@ -36,16 +47,8 @@ const sessionSettings = {
   secret: sessionSecret,
   resave: false,
   saveUninitialized: false,
-  cookie: {
-    secure: false,
-    maxAge: 20000,
-  },
+  store: sessionStoreMongDb,
 };
-
-//In case of production environments, serve secure cookies
-if (app.get("env") === "production") {
-  sessionSettings.cookie.secure = true;
-}
 
 //Setting the middleware for express session
 //Express session will be stored in memory
@@ -54,10 +57,6 @@ app.use(session(sessionSettings));
 //Applying routing configurations
 app.use(blogRoutes);
 app.use("/manage", manageRoutes); //all routes of Manage , will be under the url prefix /manage
-
-//The connection string to the MongoDB and the database name will be fetched from applicationconfig.js
-//Preparing the MongoDB, connectionstring
-const MONGODB_CONN = `${databaseConnectionString}/${databaseName}`;
 
 //Connecting to MongoDB, using mongoose and on successfull connection, starting the express app
 mongoose
